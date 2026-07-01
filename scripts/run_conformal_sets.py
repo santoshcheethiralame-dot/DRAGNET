@@ -19,29 +19,11 @@ so it lives with the GPU runners.
         --cells path/to/results_data/hotpotqa/hardtraps/qwen path/to/...
 """
 import argparse
-import json
 import random
 from pathlib import Path
 
-from lineup.data.coalition import from_recipe, read_designed
-from lineup.data.serialization import read_generations, read_predictions, read_roles, read_scenarios
-
+from _cells import load_cases
 from scope.conformal import calibrate_depth, coverage_and_size, depth_item, top1_coverage
-from scope.designed import designed_family, necessary_family
-
-
-def _synergy_pairs(cell: Path) -> dict:
-    path = cell / "coalition_proof.jsonl"
-    if not path.exists():
-        return {}
-    pairs = {}
-    for line in path.read_text(encoding="utf-8").splitlines():
-        if not line.strip():
-            continue
-        record = json.loads(line)
-        if record.get("has_synergy") and record.get("synergy_pair"):
-            pairs.setdefault(record["qid"], []).append(record["synergy_pair"])
-    return pairs
 
 
 def main() -> None:
@@ -55,55 +37,20 @@ def main() -> None:
     items = {"presented": [], "contextcite": []}
     total = uncoverable = pair_rescued = 0
     for cell in args.cells:
-        scenarios = {s.qid: s for s in read_scenarios(cell / "scenarios.jsonl")}
-        wrong = [g for g in read_generations(cell / "generations.jsonl") if not g.is_correct]
-
-        if args.family == "designed":
-            designed_path = cell / "designed.jsonl"
-            if designed_path.exists():
-                designed = {d.qid: d for d in read_designed(designed_path)}
-            else:
-                designed = {qid: d for qid, s in scenarios.items() if (d := from_recipe(s)) is not None}
-            families = {
-                qid: designed_family(d.cover_chunk_ids, d.threshold) for qid, d in designed.items()
-            }
-        else:
-            causal = {
-                case.qid: [role.chunk_id for role in case.chunk_roles if role.causal]
-                for case in read_roles(cell / "roles.jsonl")
-                if not case.original_correct
-            }
-            synergy = _synergy_pairs(cell)
-            families = {
-                qid: necessary_family(ids, synergy.get(qid, ())) for qid, ids in causal.items()
-            }
-
-        rankings = {}
-        for prediction in read_predictions(cell / "predictions.jsonl"):
-            if prediction.method == "contextcite":
-                ranked = sorted(prediction.chunk_scores, key=lambda s: s.score, reverse=True)
-                rankings[prediction.qid] = [score.chunk_id for score in ranked]
-
-        for generation in wrong:
-            scenario, family = scenarios.get(generation.qid), families.get(generation.qid)
-            if scenario is None or family is None:
-                continue
+        for case in load_cases(cell, args.family):
             total += 1
-            if not family:
+            if not case.family:
                 uncoverable += 1
-            elif not any(len(member) == 1 for member in family):
+            elif not any(len(member) == 1 for member in case.family):
                 pair_rescued += 1
-            key = f"{cell}/{generation.qid}"
-            items["presented"].append(depth_item(key, [c.chunk_id for c in scenario.chunks], family))
-            ranking = rankings.get(generation.qid)
-            if ranking is not None:
-                items["contextcite"].append(depth_item(key, ranking, family))
+            items["presented"].append(depth_item(case.key, case.presented, case.family))
+            if case.ranking is not None:
+                items["contextcite"].append(depth_item(case.key, case.ranking, case.family))
 
     print(
         f"family={args.family}  cases={total}  empty-family={uncoverable}  "
         f"pairs-only (rescued from skipping)={pair_rescued}"
     )
-
     for arm, arm_items in items.items():
         rng = random.Random(args.seed)
         rng.shuffle(arm_items)
