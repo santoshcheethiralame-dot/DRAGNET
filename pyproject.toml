@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "scope"
+version = "0.0.1"
+description = "Set-valued causal attribution for retrieval-augmented generation: minimal sufficient coalitions, extracted under a query budget."
+readme = "README.md"
+requires-python = ">=3.10"
+# The benchmark supplies the oracle, backends, prompts, and data loaders. Install it editable
+# from a local checkout during development; the git URL keeps a plain `pip install .` working
+# on a hosted GPU (Kaggle/Colab).
+dependencies = [
+    "lineup @ git+https://github.com/santoshcheethiralame-dot/LINEUP",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8,<9"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
