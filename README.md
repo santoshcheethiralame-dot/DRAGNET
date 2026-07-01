@@ -16,6 +16,10 @@ non-circular oracle, model backends, prompts, and data.
 - `src/scope/mscs.py` — exact minimal sufficient / necessary sets over the subset lattice; the
   ground truth extractors are validated against, never a deployable method
 - `src/scope/extract.py` — budgeted extraction (grow along a priority order, then prune)
+- `src/scope/interactions.py` — order-2 subset surrogate: redundancy = negative pairwise terms,
+  joint support = positive; `interaction_order` feeds the extractor
+- `src/scope/designed.py` — designed-truth metrics: the set-coverage predicate and the
+  designed-vs-behavioral comparison
 - `src/scope/testbed.py` — synthetic coalition games (OR / AND / k-of-n / arbitrary formula) whose
   causal structure is known analytically
 - `src/scope/model_game.py` — the real game over a lineup scenario and backend
