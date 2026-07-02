@@ -25,7 +25,7 @@ def main() -> None:
     parser.add_argument("--alpha", type=float, default=0.1)
     parser.add_argument("--bins", type=int, default=4)
     parser.add_argument("--cap", type=int, default=3)
-    parser.add_argument("--family", choices=("designed", "behavioral"), default="behavioral")
+    parser.add_argument("--family", choices=("designed", "behavioral", "fixer"), default="behavioral")
     parser.add_argument(
         "--stratify", choices=("none", "model", "condition", "dataset"), default="none",
         help="calibrate one rule per stratum so the guarantee holds conditionally on it",
@@ -88,10 +88,11 @@ def main() -> None:
             f"  bin{index} margin ({lows[index]}, {highs[index]}]  n={bucket['n']:4d}  "
             f"tau={'inf' if tau in (None, float('inf')) else f'{tau:.0f}'}  verdict={verdict:10s}  coverage {coverage}"
         )
+    coverage = f"{report['answered_coverage']:.2f}" if report["answered_coverage"] is not None else "--"
+    size = f"{report['mean_answered_size']:.1f}" if report["mean_answered_size"] is not None else "--"
     print(
         f"verdicts: abstain {report['abstain_rate']:.2f}  singleton {report['singleton_rate']:.2f}  "
-        f"answered-coverage {report['answered_coverage']:.2f} (target {1 - args.alpha:.2f})  "
-        f"mean-size {report['mean_answered_size']:.1f}"
+        f"answered-coverage {coverage} (target {1 - args.alpha:.2f})  mean-size {size}"
     )
 
     print("\ncap sweep (risk-coverage):")

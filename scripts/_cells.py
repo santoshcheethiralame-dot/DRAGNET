@@ -1,10 +1,11 @@
 """Shared loading for the CPU runners: one record per wrong case of a cell.
 
-Families come in two modes. ``designed`` targets the planted carriers (designed.jsonl, else
+Families come in three modes. ``designed`` targets the planted carriers (designed.jsonl, else
 retrofitted from the recipe); ``behavioral`` targets the responsible sets the model actually
 exhibits — leave-one-out causal singletons from roles.jsonl plus the jointly-necessary pairs the
-leave-two-out probe recorded in coalition_proof.jsonl. An empty family means the case is
-uncoverable and is kept, not dropped.
+leave-two-out probe recorded in coalition_proof.jsonl; ``fixer`` targets repair — the passages
+whose lone removal restores the correct answer, the set a debugger actually wants. An empty
+family means the case is uncoverable and is kept, not dropped.
 """
 from __future__ import annotations
 
@@ -56,6 +57,12 @@ def load_cases(cell: Path, family_mode: str) -> list[CaseData]:
         else:
             designed = {qid: d for qid, s in scenarios.items() if (d := from_recipe(s)) is not None}
         families = {qid: designed_family(d.cover_chunk_ids, d.threshold) for qid, d in designed.items()}
+    elif family_mode == "fixer":
+        families = {
+            case.qid: tuple(frozenset({r.chunk_id}) for r in case.chunk_roles if r.now_correct)
+            for case in read_roles(cell / "roles.jsonl")
+            if not case.original_correct
+        }
     else:
         causal = {
             case.qid: [role.chunk_id for role in case.chunk_roles if role.causal]
