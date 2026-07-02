@@ -1,10 +1,13 @@
-"""Compare extraction orders on a run cell: coverage of the designed set vs queries spent.
+"""Compare extraction strategies on a run cell: coverage of the designed set vs queries spent.
 
-Three arms per wrong case, each on a fresh game so budgets are honest:
+Five arms per wrong case, each on a fresh game so budgets are honest:
   presented    — grow-prune in the order the passages were shown (the blind floor)
   contextcite  — grow-prune ranked by ContextCite's scores from predictions.jsonl (order-1 guide)
-  interaction  — sample an order-2 surrogate, rank by interaction_order (the SCoPE guide);
-                 its query count includes the sampling masks, not just the search
+  interaction  — sample an order-2 surrogate, grow-prune by interaction_order; the query count
+                 includes the sampling masks, not just the search
+  beam         — the same surrogate proposes candidate sets, verified best-first, then pruned
+  shrink       — ddmin-style block removal from the full context, ContextCite order as the
+                 drop priority when available (anytime: budget cuts cost minimality, not sufficiency)
 
 Reports, per arm: sufficient-set rate, designed-set coverage (set_covers), mean set size, mean
 queries. The coverage-vs-budget comparison is the seed of the efficiency figure.
@@ -15,13 +18,13 @@ queries. The coverage-vs-budget comparison is the seed of the efficiency figure.
 import argparse
 from pathlib import Path
 
-from lineup.data.coalition import from_recipe, read_designed
-from lineup.data.serialization import read_generations, read_predictions, read_scenarios
-
+from _cells import load_cases
 from scope.designed import designed_family, set_covers
-from scope.extract import grow_prune
+from scope.extract import grow_prune, shrink, surrogate_beam
 from scope.interactions import interaction_order, sampled_effects
 from scope.model_game import scenario_game
+
+ARMS = ("presented", "contextcite", "interaction", "beam", "shrink")
 
 
 def main() -> None:
@@ -29,67 +32,52 @@ def main() -> None:
     parser.add_argument("--cell", type=Path, required=True)
     parser.add_argument("--model", default="Qwen/Qwen2.5-7B-Instruct")
     parser.add_argument("--load-in-4bit", action="store_true")
-    parser.add_argument("--n-samples", type=int, default=48, help="surrogate masks for the interaction arm")
+    parser.add_argument("--arms", nargs="+", choices=ARMS, default=list(ARMS))
+    parser.add_argument("--n-samples", type=int, default=48, help="surrogate masks for the interaction/beam arms")
     parser.add_argument("--budget", type=int, default=0, help="query cap per extraction; 0 = none")
+    parser.add_argument("--family", choices=("designed", "behavioral"), default="designed")
     parser.add_argument("--limit", type=int, default=0)
     parser.add_argument("--seed", type=int, default=0)
     args = parser.parse_args()
 
-    scenarios = {s.qid: s for s in read_scenarios(args.cell / "scenarios.jsonl")}
-    wrong = [g for g in read_generations(args.cell / "generations.jsonl") if not g.is_correct]
+    cases = [case for case in load_cases(args.cell, args.family) if case.family]
     if args.limit:
-        wrong = wrong[: args.limit]
-
-    designed_path = args.cell / "designed.jsonl"
-    if designed_path.exists():
-        designed = {d.qid: d for d in read_designed(designed_path)}
-    else:
-        designed = {qid: d for qid, s in scenarios.items() if (d := from_recipe(s)) is not None}
-
-    contextcite = {}
-    predictions_path = args.cell / "predictions.jsonl"
-    if predictions_path.exists():
-        for prediction in read_predictions(predictions_path):
-            if prediction.method == "contextcite":
-                ranked = sorted(prediction.chunk_scores, key=lambda s: s.score, reverse=True)
-                contextcite[prediction.qid] = [score.chunk_id for score in ranked]
+        cases = cases[: args.limit]
 
     from lineup.backends import TransformersModel
 
     model = TransformersModel(args.model, load_in_4bit=args.load_in_4bit)
     budget = args.budget or None
 
-    arms = ["presented", "contextcite", "interaction"]
-    tallies = {arm: {"n": 0, "sufficient": 0, "covered": 0, "size": 0, "queries": 0} for arm in arms}
-    for index, generation in enumerate(wrong):
-        scenario, planted = scenarios.get(generation.qid), designed.get(generation.qid)
-        if scenario is None or planted is None:
-            continue
-        family = designed_family(planted.cover_chunk_ids, planted.threshold)
-
-        for arm in arms:
-            game = scenario_game(model, scenario, generation.model_answer)
+    tallies = {arm: {"n": 0, "sufficient": 0, "covered": 0, "size": 0, "queries": 0} for arm in args.arms}
+    for index, case in enumerate(cases):
+        for arm in args.arms:
+            if arm == "contextcite" and case.ranking is None:
+                continue
+            game = scenario_game(model, case.scenario, case.model_answer)
             if arm == "presented":
-                order = list(game.ids)
+                result = grow_prune(game, order=list(game.ids), budget=budget)
             elif arm == "contextcite":
-                order = contextcite.get(generation.qid)
-                if order is None:
-                    continue
-            else:
+                result = grow_prune(game, order=case.ranking, budget=budget)
+            elif arm == "interaction":
                 effects = sampled_effects(game, n_samples=args.n_samples, seed=args.seed)
-                order = interaction_order(effects)
-            result = grow_prune(game, order=order, budget=budget)
+                result = grow_prune(game, order=interaction_order(effects), budget=budget)
+            elif arm == "beam":
+                effects = sampled_effects(game, n_samples=args.n_samples, seed=args.seed)
+                result = surrogate_beam(game, effects, budget=budget)
+            else:
+                result = shrink(game, order=case.ranking or case.presented, budget=budget)
 
             bucket = tallies[arm]
             bucket["n"] += 1
             bucket["sufficient"] += int(result.sufficient)
-            bucket["covered"] += int(set_covers(result.subset, family))
+            bucket["covered"] += int(set_covers(result.subset, case.family))
             bucket["size"] += len(result.subset) if result.subset else 0
             bucket["queries"] += game.queries
         if (index + 1) % 10 == 0:
-            print(f"[{index + 1}/{len(wrong)}]", flush=True)
+            print(f"[{index + 1}/{len(cases)}]", flush=True)
 
-    for arm in arms:
+    for arm in args.arms:
         t = tallies[arm]
         n = t["n"] or 1
         print(

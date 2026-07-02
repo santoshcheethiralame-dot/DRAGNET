@@ -22,6 +22,8 @@ from scope.designed import designed_family, necessary_family
 class CaseData:
     key: str
     qid: str
+    scenario: object         # the lineup Scenario, for building the model game
+    model_answer: str        # the wrong answer whose support is in question
     presented: list          # passage order as shown to the model
     ranking: list | None     # contextcite score order; None when no prediction exists
     margin: float            # contextcite top1 - top2 score, the confidence signal
@@ -80,6 +82,8 @@ def load_cases(cell: Path, family_mode: str) -> list[CaseData]:
             CaseData(
                 key=f"{cell}/{generation.qid}",
                 qid=generation.qid,
+                scenario=scenario,
+                model_answer=generation.model_answer,
                 presented=[chunk.chunk_id for chunk in scenario.chunks],
                 ranking=rankings.get(generation.qid),
                 margin=margins.get(generation.qid, 0.0),
