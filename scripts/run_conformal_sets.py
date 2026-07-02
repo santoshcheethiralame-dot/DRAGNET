@@ -30,7 +30,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--cells", type=Path, nargs="+", required=True)
     parser.add_argument("--alpha", type=float, default=0.1)
-    parser.add_argument("--family", choices=("designed", "behavioral", "fixer"), default="behavioral")
+    parser.add_argument("--family", choices=("designed", "behavioral", "fixer", "mscs"), default="behavioral")
     parser.add_argument("--seed", type=int, default=0)
     args = parser.parse_args()
 

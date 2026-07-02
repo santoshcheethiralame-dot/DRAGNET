@@ -25,7 +25,7 @@ def main() -> None:
     parser.add_argument("--alpha", type=float, default=0.1)
     parser.add_argument("--bins", type=int, default=4)
     parser.add_argument("--cap", type=int, default=3)
-    parser.add_argument("--family", choices=("designed", "behavioral", "fixer"), default="behavioral")
+    parser.add_argument("--family", choices=("designed", "behavioral", "fixer", "mscs"), default="behavioral")
     parser.add_argument(
         "--stratify", choices=("none", "model", "condition", "dataset"), default="none",
         help="calibrate one rule per stratum so the guarantee holds conditionally on it",

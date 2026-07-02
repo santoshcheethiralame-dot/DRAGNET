@@ -1,11 +1,13 @@
 """Shared loading for the CPU runners: one record per wrong case of a cell.
 
-Families come in three modes. ``designed`` targets the planted carriers (designed.jsonl, else
+Families come in four modes. ``designed`` targets the planted carriers (designed.jsonl, else
 retrofitted from the recipe); ``behavioral`` targets the responsible sets the model actually
 exhibits — leave-one-out causal singletons from roles.jsonl plus the jointly-necessary pairs the
 leave-two-out probe recorded in coalition_proof.jsonl; ``fixer`` targets repair — the passages
-whose lone removal restores the correct answer, the set a debugger actually wants. An empty
-family means the case is uncoverable and is kept, not dropped.
+whose lone removal restores the correct answer, the set a debugger actually wants; ``mscs``
+targets the enumerated minimal sufficient sets from mscs.jsonl (the run_natural_mscs artifact) —
+the exact object the guarantee is about. An empty family means the case is uncoverable and is
+kept, not dropped; cases a mode has no record for are skipped.
 """
 from __future__ import annotations
 
@@ -63,6 +65,13 @@ def load_cases(cell: Path, family_mode: str) -> list[CaseData]:
             for case in read_roles(cell / "roles.jsonl")
             if not case.original_correct
         }
+    elif family_mode == "mscs":
+        families = {}
+        for line in (cell / "mscs.jsonl").read_text(encoding="utf-8").splitlines():
+            if not line.strip():
+                continue
+            record = json.loads(line)
+            families[record["qid"]] = tuple(frozenset(subset) for subset in record["minimal_sufficient"])
     else:
         causal = {
             case.qid: [role.chunk_id for role in case.chunk_roles if role.causal]
