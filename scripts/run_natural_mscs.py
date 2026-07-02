@@ -14,12 +14,25 @@ the fraction with a small sufficient set, and the minimum-size histogram.
 import argparse
 import json
 from collections import Counter
+from itertools import chain, combinations
 from pathlib import Path
 
 from lineup.data.serialization import read_generations, read_scenarios
 
 from scope.model_game import scenario_game
 from scope.mscs import minimal_sufficient_sets
+
+
+def monotonicity_violations(game, max_size: int) -> int:
+    """Pairs S ⊂ T within the enumerated lattice where S reproduces the answer but T does not —
+    the measured violation rate of the support-determination assumption. Reads the cache only;
+    costs no model queries."""
+    subsets = [
+        frozenset(combo)
+        for combo in chain.from_iterable(combinations(game.ids, size) for size in range(max_size + 1))
+    ]
+    sufficient = [s for s in subsets if game.reproduces(s)]
+    return sum(1 for s in sufficient for t in subsets if s < t and not game.reproduces(t))
 
 
 def main() -> None:
@@ -42,7 +55,7 @@ def main() -> None:
 
     out = args.cell / "mscs.jsonl"
     min_sizes: Counter = Counter()
-    parametric = none_found = 0
+    parametric = none_found = violating = 0
     with out.open("w", encoding="utf-8") as handle:
         for index, generation in enumerate(wrong):
             scenario = scenarios.get(generation.qid)
@@ -56,6 +69,7 @@ def main() -> None:
                 "max_size": args.max_size,
                 "parametric": frozenset() in sufficient,
                 "minimal_sufficient": [sorted(subset) for subset in sufficient],
+                "monotonicity_violations": monotonicity_violations(game, args.max_size),
                 "queries": game.queries,
             }
             handle.write(json.dumps(record, ensure_ascii=False) + "\n")
@@ -66,6 +80,8 @@ def main() -> None:
                 min_sizes[min(len(s) for s in sufficient)] += 1
             else:
                 none_found += 1
+            if record["monotonicity_violations"]:
+                violating += 1
             if (index + 1) % 10 == 0:
                 print(f"[{index + 1}/{len(wrong)}]", flush=True)
 
@@ -74,6 +90,7 @@ def main() -> None:
     print(f"parametric (empty context suffices): {parametric}/{n}")
     print(f"no sufficient set within size {args.max_size}: {none_found}/{n}")
     print("minimum sufficient-set size:", dict(sorted(min_sizes.items())))
+    print(f"cases with monotonicity violations (the A3 rate): {violating}/{n}")
 
 
 if __name__ == "__main__":
