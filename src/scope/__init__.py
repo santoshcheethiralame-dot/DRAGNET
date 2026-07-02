@@ -1,7 +1,7 @@
 """Set-valued causal attribution over retrieval contexts: the subset-query game, exact minimal
 sufficient/necessary sets, and budgeted extractors."""
 
-from .extract import Extraction, grow_prune
+from .extract import Extraction, grow_prune, shrink, surrogate_beam
 from .game import Game
 from .mscs import (
     CausalStructure,
@@ -22,4 +22,6 @@ __all__ = [
     "is_sufficient",
     "minimal_necessary_sets",
     "minimal_sufficient_sets",
+    "shrink",
+    "surrogate_beam",
 ]
