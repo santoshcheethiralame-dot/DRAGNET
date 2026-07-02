@@ -72,6 +72,53 @@ def calibrate_rule(
     return DecisionRule(edges=edges, taus=taus, alpha=alpha, cap=cap)
 
 
+def calibrate_stratified_rules(
+    pairs_by_stratum: dict[str, list[tuple[float, DepthItem]]],
+    alpha: float,
+    *,
+    bins: int = 4,
+    cap: int | None = None,
+) -> dict[str, DecisionRule]:
+    """Mondrian calibration: one rule per stratum (model, dataset, whatever the deployment
+    conditions on), so the guarantee holds *conditionally* on each stratum rather than only on
+    the pooled mixture — the failure mode a marginal tau hides is one stratum quietly paying
+    for another's coverage. Small strata inherit the conservative small-bin behavior: they
+    drift toward abstention, never toward overclaiming."""
+    return {
+        stratum: calibrate_rule(pairs, alpha, bins=bins, cap=cap)
+        for stratum, pairs in pairs_by_stratum.items()
+    }
+
+
+def evaluate_stratified(
+    rules: dict[str, DecisionRule],
+    pairs_by_stratum: dict[str, list[tuple[float, DepthItem]]],
+) -> dict:
+    """Per-stratum reports plus the pooled aggregate (weighted by stratum size)."""
+    per_stratum = {
+        stratum: evaluate_rule(rules[stratum], pairs)
+        for stratum, pairs in pairs_by_stratum.items()
+        if stratum in rules
+    }
+    n = sum(report["n"] for report in per_stratum.values())
+    answered = sum(
+        round((1 - report["abstain_rate"]) * report["n"]) for report in per_stratum.values() if report["n"]
+    )
+    covered = sum(
+        report["answered_coverage"] * round((1 - report["abstain_rate"]) * report["n"])
+        for report in per_stratum.values()
+        if report["n"] and report["answered_coverage"] is not None
+    )
+    return {
+        "per_stratum": per_stratum,
+        "pooled": {
+            "n": n,
+            "abstain_rate": (n - answered) / n if n else None,
+            "answered_coverage": covered / answered if answered else None,
+        },
+    }
+
+
 def evaluate_rule(rule: DecisionRule, pairs: list[tuple[float, DepthItem]]) -> dict:
     """Test-split report: verdict shares, coverage among answered cases (the guarantee), and the
     context cost paid for it, overall and per bin."""

@@ -2,7 +2,13 @@ import math
 import random
 
 from scope.conformal import DepthItem, calibrate_depth
-from scope.decide import DecisionRule, calibrate_rule, evaluate_rule
+from scope.decide import (
+    DecisionRule,
+    calibrate_rule,
+    calibrate_stratified_rules,
+    evaluate_rule,
+    evaluate_stratified,
+)
 
 
 def _item(depth, n_chunks=8, key="k"):
@@ -81,3 +87,46 @@ def test_empty_bins_abstain():
     rule = DecisionRule(edges=(0.5,), taus=(None, 2.0), alpha=0.1, cap=None)
     assert rule.decide(0.2, ["a", "b", "c"]).kind == "abstain"
     assert rule.decide(0.8, ["a", "b", "c"]).kind == "set"
+
+
+def _stratified_fixture():
+    # An easy stratum (depth 1) and a hard one (depth 5). The hard stratum is kept *below*
+    # alpha of the mixture — exactly the regime where the pooled quantile never reaches its
+    # tail, so the marginal guarantee is honest while the stratum silently fails.
+    rng = random.Random(0)
+    easy = [(rng.random(), _item(1)) for _ in range(600)]
+    hard = [(rng.random(), _item(5)) for _ in range(60)]
+    return easy, hard
+
+
+def test_pooled_calibration_undercovers_the_hard_stratum():
+    easy, hard = _stratified_fixture()
+    pooled = calibrate_rule(easy[:300] + hard[:30], alpha=0.1, bins=1)
+    marginal = evaluate_rule(pooled, easy[300:] + hard[30:])
+    hard_only = evaluate_rule(pooled, hard[30:])
+    assert marginal["answered_coverage"] >= 0.9   # the marginal guarantee holds...
+    assert hard_only["answered_coverage"] == 0.0  # ...while the hard stratum silently pays for it
+
+
+def test_stratified_calibration_restores_conditional_coverage():
+    easy, hard = _stratified_fixture()
+    rules = calibrate_stratified_rules(
+        {"easy": easy[:300], "hard": hard[:30]}, alpha=0.1, bins=1
+    )
+    report = evaluate_stratified(rules, {"easy": easy[300:], "hard": hard[30:]})
+    assert report["per_stratum"]["hard"]["answered_coverage"] >= 0.9
+    assert report["per_stratum"]["easy"]["answered_coverage"] >= 0.9
+    assert report["pooled"]["answered_coverage"] >= 0.9
+    # The hard stratum pays with a bigger set, not with silent under-coverage.
+    assert rules["hard"].taus[0] > rules["easy"].taus[0]
+
+
+def test_single_stratum_reduces_to_the_plain_rule():
+    easy, _ = _stratified_fixture()
+    rules = calibrate_stratified_rules({"all": easy[:300]}, alpha=0.2, bins=2)
+    assert rules["all"] == calibrate_rule(easy[:300], alpha=0.2, bins=2)
+
+
+def test_an_empty_stratum_abstains_everywhere():
+    rules = calibrate_stratified_rules({"empty": []}, alpha=0.1, bins=2)
+    assert rules["empty"].decide(0.5, ["a", "b"]).kind == "abstain"

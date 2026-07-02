@@ -22,6 +22,7 @@ from scope.designed import designed_family, necessary_family
 class CaseData:
     key: str
     qid: str
+    source: str              # the cell path: .../dataset/condition/model
     scenario: object         # the lineup Scenario, for building the model game
     model_answer: str        # the wrong answer whose support is in question
     presented: list          # passage order as shown to the model
@@ -82,6 +83,7 @@ def load_cases(cell: Path, family_mode: str) -> list[CaseData]:
             CaseData(
                 key=f"{cell}/{generation.qid}",
                 qid=generation.qid,
+                source=str(cell),
                 scenario=scenario,
                 model_answer=generation.model_answer,
                 presented=[chunk.chunk_id for chunk in scenario.chunks],

@@ -16,7 +16,7 @@ from pathlib import Path
 
 from _cells import load_cases
 from scope.conformal import depth_item
-from scope.decide import calibrate_rule, evaluate_rule
+from scope.decide import calibrate_rule, calibrate_stratified_rules, evaluate_rule, evaluate_stratified
 
 
 def main() -> None:
@@ -26,21 +26,52 @@ def main() -> None:
     parser.add_argument("--bins", type=int, default=4)
     parser.add_argument("--cap", type=int, default=3)
     parser.add_argument("--family", choices=("designed", "behavioral"), default="behavioral")
+    parser.add_argument(
+        "--stratify", choices=("none", "model", "condition", "dataset"), default="none",
+        help="calibrate one rule per stratum so the guarantee holds conditionally on it",
+    )
     parser.add_argument("--seed", type=int, default=0)
     args = parser.parse_args()
 
-    pairs = []
+    part = {"model": -1, "condition": -2, "dataset": -3}
+    by_stratum: dict = {}
     for cell in args.cells:
         for case in load_cases(cell, args.family):
             if case.ranking is None:
                 continue
-            pairs.append((case.margin, depth_item(case.key, case.ranking, case.family)))
+            stratum = Path(case.source).parts[part[args.stratify]] if args.stratify != "none" else "all"
+            by_stratum.setdefault(stratum, []).append(
+                (case.margin, depth_item(case.key, case.ranking, case.family))
+            )
 
-    rng = random.Random(args.seed)
-    rng.shuffle(pairs)
-    half = len(pairs) // 2
-    calibration, test = pairs[:half], pairs[half:]
+    # Split within each stratum, so no stratum ends up calibration-starved by the shuffle.
+    calibration_by, test_by = {}, {}
+    for stratum, stratum_pairs in sorted(by_stratum.items()):
+        rng = random.Random(args.seed)
+        rng.shuffle(stratum_pairs)
+        half = len(stratum_pairs) // 2
+        calibration_by[stratum], test_by[stratum] = stratum_pairs[:half], stratum_pairs[half:]
 
+    if args.stratify != "none":
+        rules = calibrate_stratified_rules(calibration_by, alpha=args.alpha, bins=args.bins, cap=args.cap)
+        stratified = evaluate_stratified(rules, test_by)
+        print(f"stratify={args.stratify}  alpha={args.alpha}  bins={args.bins}  cap={args.cap}")
+        for stratum, row in sorted(stratified["per_stratum"].items()):
+            coverage = f"{row['answered_coverage']:.2f}" if row["answered_coverage"] is not None else "  --"
+            size = f"{row['mean_answered_size']:.1f}" if row["mean_answered_size"] is not None else " --"
+            print(
+                f"  {stratum:10s} n={row['n']:4d}  abstain {row['abstain_rate']:.2f}  "
+                f"coverage {coverage}  mean-size {size}"
+            )
+        pooled = stratified["pooled"]
+        print(
+            f"pooled: n={pooled['n']}  abstain {pooled['abstain_rate']:.2f}  "
+            f"answered-coverage {pooled['answered_coverage']:.2f} (target {1 - args.alpha:.2f})"
+        )
+        return
+
+    calibration = [pair for pairs in calibration_by.values() for pair in pairs]
+    test = [pair for pairs in test_by.values() for pair in pairs]
     rule = calibrate_rule(calibration, alpha=args.alpha, bins=args.bins, cap=args.cap)
     report = evaluate_rule(rule, test)
 
