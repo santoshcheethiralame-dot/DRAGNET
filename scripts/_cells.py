@@ -71,6 +71,11 @@ def load_cases(cell: Path, family_mode: str) -> list[CaseData]:
             if not line.strip():
                 continue
             record = json.loads(line)
+            if record["parametric"]:
+                # The empty set is sufficient, so any prefix would count as covered — parametric
+                # cases sit outside the guarantee's denominator (their fraction is reported by
+                # the prereg scorer, not silently dropped here and forgotten).
+                continue
             families[record["qid"]] = tuple(frozenset(subset) for subset in record["minimal_sufficient"])
     else:
         causal = {
