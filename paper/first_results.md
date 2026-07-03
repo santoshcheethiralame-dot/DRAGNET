@@ -127,8 +127,18 @@ mistral's unreachability into visible abstention instead of silent under-coverag
 alpha=0.1 stays below target only because mistral is in the pool — the per-model story is the
 honest and the strong one.
 
+## The backfill closes the package — scored 2026-07-03
+
+With the coalition-aware orders grafted onto the bound-5 families, **qwen passes the alpha=0.1
+guarantee 3/3 seeds on every dataset** (hotpotqa: interaction tau=3–4 coverage 0.91–0.94,
+shapley 0.91–0.97 — the predicted upgrade from 2/3 on the contextcite order). phi stays a
+size near-miss (tau=4–5); mistral stays the reach boundary. **H4 fails definitively at real
+power** (beam vs contextcite on the designed target: qwen -0.03, p=1.0, n=40; phi -0.08,
+p=0.909, n=37) — the designed arm ends as a clean, fully-instrumented negative. Bound-5
+family structure is stable: irreducibly-shared responsibility 0.34 (0.37 at bound-3),
+hierarchy violated 0.55 (0.51).
+
 ## What remains to run
 
-The hotpotqa backfill (extraction rows + qwen/phi orders) — H4 and the hotpotqa arm
-comparison. Grid fillers and seeds for the robustness panel. The designed arm needs no
-further GPU.
+Only robustness breadth: the grid fillers and seed replications (W-wave). The preregistered
+evidence program is otherwise complete.
