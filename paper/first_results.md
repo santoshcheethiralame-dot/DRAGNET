@@ -86,6 +86,29 @@ toward ~0.95 and retest alpha=0.1.
 (28 / 70 / 80 cases) — Thm 1 holds only in its approximate form; report the violation rate as
 a first-class quantity.
 
+## Family structure — graded responsibility and the exact spectrum (2026-07-03, exploratory)
+
+Computed exactly from the enumerated families (all six natural cells, pooled n=372 evaluable
+wrong cases; parametric and out-of-bound cases excluded and counted).
+
+**Graded responsibility (Chockler–Halpern over the family semantics).** In **37%** of cases no
+passage bears responsibility above 1/2 (per-cell 0.26–0.42); 63% have a true culprit
+(responsibility 1.0 = a member-intersection passage = the LOO-causal label, Thm 1's object).
+The distribution is exactly {1, 1/2, 1/3, ...} by arithmetic — 1/(1+k) for integer k — so
+"nothing in (1/2, 1)" is bookkeeping, not a finding; the substantive quantity is the 37%
+irreducibly-shared rate. **That rate independently reproduces the benchmark's pooled
+no-single-culprit rate (37%) from a different instrument on different cells** — the LOO role
+matrix and the CH-responsibility computation over enumerated families converge on the same
+number. Credit dilution is now derived, not assumed: OR-covers of m carriers each get 1/m.
+
+**Hierarchy of the interaction spectrum.** The exact Moebius spectrum of the family indicator
+violates the hierarchy assumption (nonzero high-order terms accompanied by nonzero lower-order
+subsets) in **51%** of cases pooled (0.34–0.63 per cell; 560 pure-synergy terms). Scalable
+interaction-attribution methods lean on precisely this assumption — and it fails on the
+AND-coalition cases where interaction attribution matters most. Caveat: computed on the
+monotone family indicator at the enumeration bound, i.e. on the object those methods try to
+recover, not the raw (non-monotone) game.
+
 ## What remains to run
 
 Natural cells (pipeline + mscs + orders) for mistral/hotpotqa, qwen/musique, qwen/2wiki;
