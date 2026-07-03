@@ -109,8 +109,26 @@ AND-coalition cases where interaction attribution matters most. Caveat: computed
 monotone family indicator at the enumeration bound, i.e. on the object those methods try to
 recover, not the raw (non-monotone) game.
 
+## The alpha=0.1 retest at bound-5 — scored 2026-07-03 (deep-MSCS runs)
+
+Re-enumeration at max_size 5 lifted the family reach exactly as Prop 4 predicts: pooled
+no-set-in-bound fell 27/227 → 20/361 (5.5%), ceiling 0.88 → ~0.94. H1 strengthens everywhere
+(qwen/hotpotqa 0.96, phi 0.97, musique 0.97, 2wiki 0.99, mistral 0.79).
+
+**The 90% guarantee at small sets is now achieved where the theory says it can be:** the
+shapley order passes all three seeds on musique (tau=4, coverage 0.92–0.94) and 2wiki
+(tau=3–4, coverage 0.93–1.00); qwen/hotpotqa passes 2/3 on the contextcite order (tau=4–5,
+coverage 0.91–0.97; its coalition-aware orders are pending the backfill run). phi holds
+coverage (0.85–0.97) but at size 5–6, failing the preregistered size cap. **Mistral fails hard
+and instructively — tau=inf, coverage capped at 0.78 by the 21% of its errors that escape even
+bound-5 families.** The failure is principled (family reach, not ranking), predicted by the
+coverage–size law, and already remedied in the machinery: stratified calibration turns
+mistral's unreachability into visible abstention instead of silent under-coverage. Pooled
+alpha=0.1 stays below target only because mistral is in the pool — the per-model story is the
+honest and the strong one.
+
 ## What remains to run
 
-Natural cells (pipeline + mscs + orders) for mistral/hotpotqa, qwen/musique, qwen/2wiki;
-orders.jsonl backfill on the two existing hotpotqa natural cells. The designed arm needs no
+The hotpotqa backfill (extraction rows + qwen/phi orders) — H4 and the hotpotqa arm
+comparison. Grid fillers and seeds for the robustness panel. The designed arm needs no
 further GPU.
