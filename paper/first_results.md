@@ -46,6 +46,17 @@ run_decision_rule; bootstrap = 1000 unless noted.
   (the rule degrades to silence rather than overclaim, as designed). Bins>1 saturate at this
   n. Re-run with the interaction order and margin when orders.jsonl lands.
 
+## Depth check — k=10 natural cell (qwen/hotpotqa, scored 2026-07-03)
+
+The retrieval-depth run replicates every k=6 number: H1 0.93 [0.85, 0.98] (n=54, parametric
+0.10), min-size histogram {1:37, 2:7, 3:6}, functional ambiguity 0.52, A3-violating 44/60.
+**Minimal sufficient set size is flat in k** — the exact escape Prop 4 predicts, against the
+necessary-set size that scaled ~0.45k in the benchmark. Conformal on the ContextCite order at
+alpha=0.2: tau=3 of 10 passages (coverage 0.85–0.89) — the absolute set budget did not grow
+with the context, so the guarantee is relatively tighter at depth. alpha=0.1 stays vacuous on
+this order (the interaction-order test is pending). H5 again fails under the violation rate
+(0.42 on n=12 clean cases).
+
 ## What remains to run
 
 Natural cells (pipeline + mscs + orders) for mistral/hotpotqa, qwen/musique, qwen/2wiki;
