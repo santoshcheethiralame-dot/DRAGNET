@@ -1,6 +1,6 @@
 # DRAGNET
 
-Set-valued causal attribution for retrieval-augmented generation. When a RAG answer is wrong,
+**D**istribution-free **RAG** **N**onconformity **E**rror **T**raceback — set-valued causal attribution for retrieval-augmented generation. When a RAG answer is wrong,
 the responsible evidence is often a coalition of passages rather than one culprit — a lineup
 cannot name a single suspect, so you cast a dragnet: a calibrated set guaranteed to contain the
 responsible passages, as small as the evidence allows. DRAGNET estimates the **minimal
