@@ -68,4 +68,7 @@ def main(
     max_size: int = 5,
     mscs_limit: int = 100,
 ):
-    natural_cell.remote(dataset, model, tag, max_size, mscs_limit)
+    # spawn (not remote): the job runs server-side to completion even after the terminal exits or
+    # the laptop closes. The entrypoint returns immediately with a handle.
+    call = natural_cell.spawn(dataset, model, tag, max_size, mscs_limit)
+    print(f"spawned {dataset}/natural/{tag}  (call {call.object_id}) — running on Modal; safe to close the laptop.")
