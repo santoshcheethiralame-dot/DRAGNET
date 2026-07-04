@@ -237,6 +237,29 @@ self-citations in the conformal layer is the natural bridge to trained self-attr
 (parsimony + guarantee). (2) Whether smaller models self-cite this well is open - the scale
 question rides any future GPU pass (run_selfcite on the qwen/phi/mistral cells).
 
+## The closing batch — calibrated self-citation, CIs, heterogeneity, confounds (2026-07-04)
+
+**Self-citation + calibration = the bridge, working.** Ordering passages by the frontier model's
+own citations and calibrating exactly as the method does: **tau=2, coverage 1.00 at alpha=0.1,
+all three seeded splits** (n=33, small-sample caveat; alpha=0.2 wobbles on one seed). The
+model's proposal beats every post-hoc search ranking (tau=3-4) once wrapped in the guarantee -
+trained self-attribution demonstrated end to end.
+
+**Intervals on the headliners.** Disjointness 0.31 [0.27, 0.35] of 500 evaluable cases
+(ambiguity 0.60 [0.56, 0.65]).
+
+**Question-type heterogeneity.** Comparison questions are the ambiguity hotspot - disjoint 0.47
+vs bridge 0.29 (2hop 0.33, compositional 0.25) - mirroring the benchmark's question-type
+gradient and giving the mechanism: comparisons admit independent evidence combinations per
+entity.
+
+**Confounds closed.** Passage length is flat between members and non-members (497 vs 490
+chars), as position already was. Cross-model overlap including the frontier: the 120B's simpler
+families (mostly singletons) agree more with every small model (identical-family up to 0.40,
+n=10-20) than small models do with each other (0.04-0.23). And the frontier lattice is far less
+rugged - mean 4.6 violating pairs vs 21-28 for small models - interference declines with
+capacity even as its prevalence (0.72) persists.
+
 ## What remains to run
 
 Only robustness breadth: the grid fillers and seed replications (W-wave). The preregistered

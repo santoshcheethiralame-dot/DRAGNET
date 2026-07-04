@@ -66,24 +66,55 @@ def main() -> None:
         label = "inf" if tau == float("inf") else f"{tau:.0f}"
         print(f"  seed={seed}  tau*={label}  coverage {covered:.2f}  mean size {size:.1f}")
 
-    # 2 — disjoint explanations
-    ambiguous = disjoint = evaluable = 0
+    # 2 — disjoint explanations, with case-bootstrap intervals
+    flags = []   # (ambiguous, disjoint) per evaluable case
     multiplicity: Counter = Counter()
     for d in data.values():
         for family in d["families"].values():
             if not family:
                 continue
-            evaluable += 1
             multiplicity[min(len(family), 5)] += 1
-            if len(family) > 1:
-                ambiguous += 1
-                if any(not (a & b) for a, b in combinations(family, 2)):
-                    disjoint += 1
+            amb = len(family) > 1
+            flags.append((amb, amb and any(not (a & b) for a, b in combinations(family, 2))))
+    evaluable = len(flags)
+    ambiguous = sum(a for a, _ in flags)
+    disjoint = sum(d for _, d in flags)
+
+    def ci(select, n_boot=1000, seed=0):
+        rng = random.Random(seed)
+        draws = sorted(
+            sum(select(flags[rng.randrange(evaluable)]) for _ in range(evaluable)) / evaluable
+            for _ in range(n_boot)
+        )
+        return draws[int(0.025 * n_boot)], draws[int(0.975 * n_boot)]
+
+    amb_lo, amb_hi = ci(lambda f: f[0])
+    dis_lo, dis_hi = ci(lambda f: f[1])
     print(f"\n== disjointness (n evaluable={evaluable}) ==")
-    print(f"  ambiguous (>1 member): {ambiguous / evaluable:.2f}")
-    print(f"  fully disjoint pair among members: {disjoint}/{ambiguous} = {disjoint / ambiguous:.2f} of ambiguous "
-          f"= {disjoint / evaluable:.2f} of all evaluable")
+    print(f"  ambiguous (>1 member): {ambiguous / evaluable:.2f} [{amb_lo:.2f}, {amb_hi:.2f}]")
+    print(f"  fully disjoint: {disjoint / evaluable:.2f} [{dis_lo:.2f}, {dis_hi:.2f}] of evaluable "
+          f"({disjoint}/{ambiguous} = {disjoint / ambiguous:.2f} of ambiguous)")
     print(f"  member-count histogram (cap 5): {dict(sorted(multiplicity.items()))}")
+
+    # 2b — heterogeneity by question type (meta 'type', else the musique hop prefix)
+    by_type: dict[str, list] = {}
+    for cell, d in data.items():
+        kinds = {}
+        for s in read_scenarios(cell / "scenarios.jsonl"):
+            kind = (s.meta or {}).get("type") or (s.qid.split("__")[0] if "__" in s.qid else None)
+            kinds[s.qid] = kind or "unknown"
+        for qid, family in d["families"].items():
+            if family:
+                amb = len(family) > 1
+                dis = amb and any(not (a & b) for a, b in combinations(family, 2))
+                by_type.setdefault(kinds.get(qid, "unknown"), []).append((amb, dis))
+    print("\n== heterogeneity by question type (groups with n>=20) ==")
+    for kind, fl in sorted(by_type.items(), key=lambda kv: -len(kv[1])):
+        if len(fl) < 20:
+            continue
+        n = len(fl)
+        print(f"  {kind:12s} n={n:4d}  ambiguity {sum(a for a, _ in fl) / n:.2f}  "
+              f"disjoint {sum(d for _, d in fl) / n:.2f}")
 
     # 3 — cross-model family overlap on identical cases
     by_dataset: dict[str, dict[str, dict]] = {}
@@ -122,6 +153,22 @@ def main() -> None:
               f"A3 violations mean {mean([r['monotonicity_violations'] for r in unreachable]):.1f} (unreachable) "
               f"vs {mean([r['monotonicity_violations'] for r in reachable]):.1f} (reachable)  "
               f"parametric {parametric}/{len(rows)}")
+
+    # 5b — member vs non-member passage length (the companion confound check)
+    member_len, other_len = [], []
+    for cell, d in data.items():
+        texts = {c.chunk_id: len(c.text) for s in read_scenarios(cell / "scenarios.jsonl") for c in s.chunks}
+        seen_by_qid = {s.qid: [c.chunk_id for c in s.chunks] for s in read_scenarios(cell / "scenarios.jsonl")}
+        for qid, family in d["families"].items():
+            if not family:
+                continue
+            members = frozenset().union(*family)
+            for cid in seen_by_qid.get(qid, []):
+                (member_len if cid in members else other_len).append(texts[cid])
+    if member_len and other_len:
+        print(f"\n== member vs non-member passage length ==")
+        print(f"  members mean {sum(member_len) / len(member_len):.0f} chars   "
+              f"non-members {sum(other_len) / len(other_len):.0f} chars")
 
     # 5 — where members sit in the presented order
     position: Counter = Counter()
