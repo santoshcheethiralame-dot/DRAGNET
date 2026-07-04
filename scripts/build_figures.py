@@ -198,6 +198,45 @@ def fig_pareto(root: Path, out: Path) -> None:
     plt.close(fig)
 
 
+def fig_selective(root: Path, out: Path) -> None:
+    """N5 — the singleton risk floor: answer by descending confidence; selective risk never
+    drops below ~0.3, so committing to one blamed passage at low error is impossible."""
+    from dragnet.designed import set_covers
+    from dragnet.selective import risk_coverage
+
+    scored = []
+    for ds, m in CELLS:
+        cell = root / ds / "natural" / m
+        if not (cell / "mscs.jsonl").exists():
+            continue
+        for case in load_cases(cell, "mscs"):
+            if case.ranking and case.family:
+                scored.append((case.margin, set_covers(frozenset({case.ranking[0]}), case.family)))
+    if not scored:
+        print("  fig_selective skipped")
+        return
+    curve = risk_coverage(scored)
+    xs = [c for c, _ in curve]
+    ys = [r for _, r in curve]
+    floor = min(r for c, r in curve if c >= 0.1)
+    fig, ax = plt.subplots(figsize=(6.4, 4.2))
+    ax.plot(xs, ys, color="#b03a3a", linewidth=2, label="selective risk (best confidence gating)")
+    ax.axhline(floor, color="#b03a3a", linestyle=":", linewidth=1)
+    ax.text(0.02, floor - 0.03, f"floor ~{floor:.2f}: no gating commits a single passage below this error",
+            fontsize=8, color="#b03a3a", va="top")
+    ax.axhspan(0, 0.1, color="#2e7d32", alpha=0.08)
+    ax.text(0.02, 0.085, "the error a practitioner wants (alpha = 0.1) — reachable only by the SET",
+            fontsize=8, color="#2e7d32", va="top")
+    ax.set_xlabel("fraction of errors answered (by descending margin)")
+    ax.set_ylabel("false-answer rate of the committed passage")
+    ax.set_title(f"Blaming one passage has a risk floor (pooled n={len(scored)})")
+    ax.set_ylim(0, 0.55)
+    ax.legend(fontsize=8, loc="lower right")
+    fig.tight_layout()
+    fig.savefig(out / "fig_selective.png", dpi=160)
+    plt.close(fig)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--root", type=Path, required=True, help="bound-5 cell tree")
@@ -211,6 +250,7 @@ def main() -> None:
     fig_responsibility(args.root, args.out)
     fig_a3(args.root, args.out)
     fig_pareto(args.root, args.out)
+    fig_selective(args.root, args.out)
     if args.root3 and args.k10:
         fig_depth(args.root3, args.k10, args.out)
     print(f"figures written to {args.out}")

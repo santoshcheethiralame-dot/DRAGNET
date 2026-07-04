@@ -46,6 +46,9 @@ def main() -> None:
     parser.add_argument("--cell", type=Path, required=True)
     parser.add_argument("--model", default="Qwen/Qwen2.5-7B-Instruct")
     parser.add_argument("--load-in-4bit", action="store_true")
+    parser.add_argument("--provider", default=None, help="run over an API instead of a local GPU (e.g. cerebras)")
+    parser.add_argument("--min-interval", type=float, default=2.0, help="seconds between API calls")
+    parser.add_argument("--max-tokens", type=int, default=256, help="API output budget (reasoning models think first)")
     parser.add_argument("--limit", type=int, default=0, help="wrong cases (0 = all)")
     args = parser.parse_args()
 
@@ -54,9 +57,15 @@ def main() -> None:
     if args.limit:
         wrong = wrong[: args.limit]
 
-    from lineup.backends import TransformersModel
+    if args.provider:
+        from lineup.backends.api_backend import PROVIDERS, APIModel
 
-    model = TransformersModel(args.model, max_new_tokens=48, load_in_4bit=args.load_in_4bit)
+        model = APIModel(args.model, base_url=PROVIDERS[args.provider],
+                         max_new_tokens=args.max_tokens, min_interval=args.min_interval)
+    else:
+        from lineup.backends import TransformersModel
+
+        model = TransformersModel(args.model, max_new_tokens=48, load_in_4bit=args.load_in_4bit)
 
     out = args.cell / "selfcite.jsonl"
     with out.open("w", encoding="utf-8") as handle:
