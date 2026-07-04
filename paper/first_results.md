@@ -224,6 +224,19 @@ its wrong answers with no context three times more often, i.e. contamination/par
 scales with capacity while the attribution structure does not. The structure of RAG error is
 scale-invariant from 3.8B to 120B; only its parametric share grows.
 
+## Does the model know its sufficient sets? Self-citation at 120B (2026-07-04)
+
+Asked to name the passages its own (wrong) answer relied on, gpt-oss-120B's self-citations
+(mean size 1.7) **contain a complete sufficient set 88% of the time vs a size-matched chance
+baseline of 33%, and name exactly a minimal member 45% vs 14% chance** (n=33 evaluable). Against
+the chain-of-thought-faithfulness prior, frontier self-knowledge of causal support is
+substantial - a strong, parsimonious, UNCALIBRATED proposal. The two readings that matter:
+(1) self-citation at size 1.7 / coverage 0.88 sits just below the calibrated set at tau=3 /
+0.91-0.97 - but without a guarantee, and with no way to know WHICH 12% are wrong; wrapping
+self-citations in the conformal layer is the natural bridge to trained self-attribution
+(parsimony + guarantee). (2) Whether smaller models self-cite this well is open - the scale
+question rides any future GPU pass (run_selfcite on the qwen/phi/mistral cells).
+
 ## What remains to run
 
 Only robustness breadth: the grid fillers and seed replications (W-wave). The preregistered
