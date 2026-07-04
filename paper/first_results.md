@@ -166,6 +166,44 @@ seed (coverage 0.89-1.00). The headline holds across three independent seeds -- 
 discipline is satisfied on the headline cell, the guarantee across 9/9 seeded splits.
 (results (3)(1).zip was a redundant re-download of the k=10 cell, not scored.)
 
+## Family interrogation — six analyses over the finished grid (2026-07-04, exploratory)
+
+**The floor (oracle-optimal tau).** A perfect ranking needs depth = the smallest member's size;
+its alpha=0.1 conformal quantile is the floor no method can beat. **qwen-pooled: tau*=3
+(coverage 0.91-0.94) — DRAGNET's achieved tau is 3-4, i.e. AT or within one passage of the
+information-theoretic optimum.** Pooled with mistral even the floor is 5/inf: the pooled failure
+was always structural (reach), never ranking. The ranking problem is closed.
+
+**Disjoint explanations (the sharpest Thm 5 statement).** Of 467 evaluable errors, 61% are
+ambiguous, and **31% of all evaluable cases carry two FULLY DISJOINT sufficient explanations**
+(no shared passage; 50% of ambiguous cases). Single-set attribution on those is not merely
+capped - the question has two non-overlapping right answers.
+
+**The responsible set is model-relative.** Models saw byte-identical scenarios (deterministic
+build), yet on jointly-wrong cases families agree weakly: identical-family 4-23%,
+share-a-member 23-42%, union-jaccard ~0.5. Ground truth for attribution is a property of
+(question, model) - per-model (Mondrian) calibration is a necessity, not a choice.
+
+**Anatomy of the unreachable.** Cases with no set within bound-5 have A3=0 *by construction*
+(nothing sufficient in the lattice to violate) - they are HOLISTIC errors: only the full
+context reproduces the answer. Reachable cases average 21-28 violating pairs. And the
+parametric rate localizes contamination: **2wiki is 21% parametric for qwen vs 6% for mistral**
+(3-11% elsewhere) - pretraining overlap measured causally, per model.
+
+**Position.** Family membership is flat across presented positions (0.54-0.61 per slot) - the
+sets are not a lost-in-the-middle artifact.
+
+**Query-budget frontier.** At equal behavioral coverage (0.93-1.00), contextcite-ordered grow
+spends **3-6 queries vs shapley's 64 (>10x)**; interaction/beam spend ~37 for no coverage gain.
+Read with the floor result: any decent order reaches the near-optimal set in a handful of
+verification queries - the expensive interaction machinery is unnecessary here, which also
+explains the H4 null honestly.
+
+**The guarantee transfers.** Calibrate tau on one dataset, deploy on another (qwen, shapley,
+alpha=0.1): coverage 0.86-0.96 in all six directions - musique->anything at 0.96/0.96 (tau=4);
+hotpotqa/2wiki (tau=3) slightly under-cover musique (0.86), the harder dataset wanting the
+larger tau. Calibrate-once-deploy-anywhere holds to within a passage.
+
 ## What remains to run
 
 Only robustness breadth: the grid fillers and seed replications (W-wave). The preregistered
