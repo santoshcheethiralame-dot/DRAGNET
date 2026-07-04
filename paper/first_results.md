@@ -150,6 +150,19 @@ abstain or switch to the calibrated set (which meets alpha = 0.1 by coverage) â€
 deployment-flavored restatement of the thesis. See `paper/selective.md`; the FDR/eBH variant is
 stricter still and selects nothing on this weak signal.
 
+## Mistral row complete + seed replication (2026-07-04)
+
+**The 3x3 H1 grid is 8/9 cells** (only phi/2wiki, phi/musique pending). Mistral, the reach-limited
+model, passes H1 on every dataset: hotpotqa 0.79, **2wiki 0.84 [0.76,0.92], musique 0.82
+[0.73,0.90]** â€” lower than qwen (0.92-0.96) but well above 0.50, with H2 failing at its reach
+ceiling (coverage 0.77-0.89, tau=inf) on every dataset. Mistral is the consistent, principled
+boundary: it has small sufficient sets less often, and where it lacks them the guarantee
+correctly abstains.
+
+**Seed replication (qwen/hotpotqa, the headline cell):** H1 seed0 0.96 [0.90,1.0] / seed2 1.00;
+ambiguity 0.54 / 0.59. The result is stable across seeds; seed1 (W5) will complete the >=3-seed
+set. (results (3)(1).zip was a redundant re-download of the k=10 cell, not scored.)
+
 ## What remains to run
 
 Only robustness breadth: the grid fillers and seed replications (W-wave). The preregistered
