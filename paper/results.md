@@ -7,12 +7,15 @@ Regenerate: `python scripts/build_results.py --root <path-to-cells>`
 | cell | rows | bound | parametric | H1 small-set | ambiguity | A3 rate | min-size hist |
 |---|--:|--:|--:|---|--:|--:|---|
 | 2wiki/natural/mistral | 80 | 5 | 0.07 | 0.84 [0.76, 0.92] | 0.53 | 0.71 | 1:22 2:18 3:14 4:3 5:5 |
+| 2wiki/natural/phi | 100 | 5 | 0.14 | 0.78 [0.69, 0.86] | 0.49 | 0.75 | 1:25 2:23 3:9 4:7 5:3 |
 | 2wiki/natural/qwen | 100 | 5 | 0.21 | 0.99 [0.96, 1.00] | 0.56 | 0.87 | 1:50 2:20 3:5 4:1 5:2 |
-| hotpotqa/natural/frontier120b | 47 | 3 | 0.28 | 0.97 [0.91, 1.00] | 0.47 | 0.72 | 1:27 2:6 |
+| hotpotqa/natural/cerebras-gpt-oss-120b | 47 | 3 | 0.28 | 0.97 [0.91, 1.00] | 0.47 | 0.72 | 1:27 2:6 |
 | hotpotqa/natural/mistral | 58 | 5 | 0.09 | 0.79 [0.68, 0.89] | 0.45 | 0.67 | 1:18 2:11 3:9 4:2 5:2 |
 | hotpotqa/natural/phi | 71 | 5 | 0.06 | 0.97 [0.93, 1.00] | 0.63 | 0.80 | 1:37 2:14 3:9 4:3 5:2 |
-| hotpotqa/natural/qwen | 75 | 5 | 0.11 | 0.96 [0.90, 1.00] | 0.54 | 0.77 | 1:52 2:7 3:3 4:2 |
+| hotpotqa/natural/qwen | 83 | 5 | 0.11 | 0.99 [0.96, 1.00] | 0.62 | 0.80 | 1:53 2:13 3:4 4:3 |
+| hotpotqa/natural/qwenbm25 | 80 | 5 | 0.12 | 0.99 [0.96, 1.00] | 0.51 | 0.74 | 1:46 2:17 3:1 4:4 5:1 |
 | musique/natural/mistral | 80 | 5 | 0.03 | 0.82 [0.73, 0.90] | 0.55 | 0.69 | 1:25 2:16 3:7 4:9 5:7 |
+| musique/natural/phi | 100 | 5 | 0.05 | 0.97 [0.93, 1.00] | 0.53 | 0.79 | 1:53 2:19 3:12 4:4 5:4 |
 | musique/natural/qwen | 100 | 5 | 0.05 | 0.97 [0.93, 1.00] | 0.61 | 0.83 | 1:54 2:23 3:10 4:3 5:2 |
 
 ## Conformal coverage per ranking arm (seeded halves, all seeds shown as min–max)
@@ -25,6 +28,12 @@ Regenerate: `python scripts/build_results.py --root <path-to-cells>`
 | 2wiki/natural/mistral | interaction | 0.2 | 5/inf | 0.76–0.89 | 5.0–6.0 | 37 |
 | 2wiki/natural/mistral | shapley | 0.1 | inf | 0.84–0.89 | 6.0–6.0 | 37 |
 | 2wiki/natural/mistral | shapley | 0.2 | 5/inf | 0.84–0.89 | 5.0–6.0 | 37 |
+| 2wiki/natural/phi | contextcite | 0.1 | inf | 0.77–0.79 | 6.0–6.0 | 43 |
+| 2wiki/natural/phi | contextcite | 0.2 | inf | 0.77–0.79 | 6.0–6.0 | 43 |
+| 2wiki/natural/phi | interaction | 0.1 | inf | 0.77–0.79 | 6.0–6.0 | 43 |
+| 2wiki/natural/phi | interaction | 0.2 | inf | 0.77–0.79 | 6.0–6.0 | 43 |
+| 2wiki/natural/phi | shapley | 0.1 | inf | 0.77–0.79 | 6.0–6.0 | 43 |
+| 2wiki/natural/phi | shapley | 0.2 | inf | 0.77–0.79 | 6.0–6.0 | 43 |
 | 2wiki/natural/qwen | contextcite | 0.1 | 4/5 | 0.90–1.00 | 4.0–5.0 | 40 |
 | 2wiki/natural/qwen | contextcite | 0.2 | 3 | 0.85–0.93 | 3.0–3.0 | 40 |
 | 2wiki/natural/qwen | interaction | 0.1 | 3/5 | 0.88–0.97 | 3.0–5.0 | 40 |
@@ -39,54 +48,61 @@ Regenerate: `python scripts/build_results.py --root <path-to-cells>`
 | hotpotqa/natural/mistral | shapley | 0.2 | inf | 0.78–0.78 | 6.0–6.0 | 27 |
 | hotpotqa/natural/phi | contextcite | 0.1 | 5/6 | 0.85–0.97 | 5.0–6.0 | 34 |
 | hotpotqa/natural/phi | contextcite | 0.2 | 4/5 | 0.76–0.91 | 4.0–5.0 | 34 |
-| hotpotqa/natural/phi | interaction | 0.1 | 4/5 | 0.79–0.94 | 4.0–5.0 | 34 |
-| hotpotqa/natural/phi | interaction | 0.2 | 3/4 | 0.74–0.88 | 3.0–4.0 | 34 |
-| hotpotqa/natural/phi | shapley | 0.1 | 4/5 | 0.85–0.97 | 4.0–5.0 | 34 |
-| hotpotqa/natural/phi | shapley | 0.2 | 3/4 | 0.79–0.94 | 3.0–4.0 | 34 |
-| hotpotqa/natural/qwen | contextcite | 0.1 | 4/5 | 0.91–0.97 | 4.0–5.0 | 34 |
-| hotpotqa/natural/qwen | contextcite | 0.2 | 2/3 | 0.85–0.94 | 2.0–3.0 | 34 |
-| hotpotqa/natural/qwen | interaction | 0.1 | 3/4 | 0.91–0.94 | 3.0–4.0 | 34 |
-| hotpotqa/natural/qwen | interaction | 0.2 | 2/3 | 0.85–0.94 | 2.0–3.0 | 34 |
-| hotpotqa/natural/qwen | shapley | 0.1 | 3/4 | 0.91–0.97 | 3.0–4.0 | 34 |
-| hotpotqa/natural/qwen | shapley | 0.2 | 2 | 0.85–0.91 | 2.0–2.0 | 34 |
+| hotpotqa/natural/qwen | contextcite | 0.1 | 4 | 0.95–0.97 | 4.0–4.0 | 37 |
+| hotpotqa/natural/qwen | contextcite | 0.2 | 2 | 0.81–0.86 | 2.0–2.0 | 37 |
+| hotpotqa/natural/qwen | interaction | 0.1 | 4 | 0.95–0.97 | 4.0–4.0 | 37 |
+| hotpotqa/natural/qwen | interaction | 0.2 | 2 | 0.86–0.89 | 2.0–2.0 | 37 |
+| hotpotqa/natural/qwen | shapley | 0.1 | 3/4 | 0.92–1.00 | 3.0–4.0 | 37 |
+| hotpotqa/natural/qwen | shapley | 0.2 | 2 | 0.84–0.89 | 2.0–2.0 | 37 |
+| hotpotqa/natural/qwenbm25 | contextcite | 0.1 | 3/4/5 | 0.80–0.97 | 3.0–5.0 | 35 |
+| hotpotqa/natural/qwenbm25 | contextcite | 0.2 | 2/3 | 0.71–0.83 | 2.0–3.0 | 35 |
+| hotpotqa/natural/qwenbm25 | interaction | 0.1 | 2/4 | 0.83–0.94 | 2.0–4.0 | 35 |
+| hotpotqa/natural/qwenbm25 | interaction | 0.2 | 2 | 0.83–0.89 | 2.0–2.0 | 35 |
+| hotpotqa/natural/qwenbm25 | shapley | 0.1 | 2/4 | 0.77–0.97 | 2.0–4.0 | 35 |
+| hotpotqa/natural/qwenbm25 | shapley | 0.2 | 2 | 0.77–0.89 | 2.0–2.0 | 35 |
 | musique/natural/mistral | contextcite | 0.1 | inf | 0.77–0.82 | 6.0–6.0 | 39 |
 | musique/natural/mistral | contextcite | 0.2 | 6 | 0.77–0.82 | 6.0–6.0 | 39 |
 | musique/natural/mistral | interaction | 0.1 | inf | 0.77–0.82 | 6.0–6.0 | 39 |
 | musique/natural/mistral | interaction | 0.2 | 5/6 | 0.64–0.82 | 5.0–6.0 | 39 |
 | musique/natural/mistral | shapley | 0.1 | inf | 0.77–0.82 | 6.0–6.0 | 39 |
 | musique/natural/mistral | shapley | 0.2 | 4/5 | 0.56–0.82 | 4.0–5.0 | 39 |
+| musique/natural/phi | contextcite | 0.1 | 5 | 0.94–0.96 | 5.0–5.0 | 48 |
+| musique/natural/phi | contextcite | 0.2 | 4/5 | 0.77–0.96 | 4.0–5.0 | 48 |
+| musique/natural/phi | interaction | 0.1 | 4/6 | 0.88–0.98 | 4.0–6.0 | 48 |
+| musique/natural/phi | interaction | 0.2 | 3 | 0.81–0.85 | 3.0–3.0 | 48 |
+| musique/natural/phi | shapley | 0.1 | 5 | 0.96–0.98 | 5.0–5.0 | 48 |
+| musique/natural/phi | shapley | 0.2 | 3/4 | 0.81–0.94 | 3.0–4.0 | 48 |
 | musique/natural/qwen | contextcite | 0.1 | 4/5 | 0.83–0.96 | 4.0–5.0 | 48 |
 | musique/natural/qwen | contextcite | 0.2 | 3/4 | 0.75–0.85 | 3.0–4.0 | 48 |
 | musique/natural/qwen | interaction | 0.1 | 4/5 | 0.90–0.92 | 4.0–5.0 | 48 |
 | musique/natural/qwen | interaction | 0.2 | 3 | 0.79–0.83 | 3.0–3.0 | 48 |
 | musique/natural/qwen | shapley | 0.1 | 4 | 0.92–0.94 | 4.0–4.0 | 48 |
 | musique/natural/qwen | shapley | 0.2 | 2/3 | 0.71–0.81 | 2.0–3.0 | 48 |
-| **pooled** | contextcite | 0.1 | 6 | 0.89–0.91 | 6.0–6.0 | 257 |
-| **pooled** | contextcite | 0.2 | 5 | 0.83–0.86 | 5.0–5.0 | 257 |
-| **pooled** | interaction | 0.1 | 6 | 0.89–0.91 | 6.0–6.0 | 257 |
-| **pooled** | interaction | 0.2 | 4/5 | 0.81–0.88 | 4.0–5.0 | 257 |
-| **pooled** | shapley | 0.1 | 5 | 0.89–0.91 | 5.0–5.0 | 257 |
-| **pooled** | shapley | 0.2 | 4 | 0.85–0.86 | 4.0–4.0 | 257 |
+| **pooled** | contextcite | 0.1 | 6 | 0.91–0.92 | 6.0–6.0 | 386 |
+| **pooled** | contextcite | 0.2 | 5 | 0.85–0.87 | 5.0–5.0 | 386 |
+| **pooled** | interaction | 0.1 | 6/inf | 0.91–0.92 | 6.0–6.0 | 352 |
+| **pooled** | interaction | 0.2 | 4 | 0.83–0.83 | 4.0–4.0 | 352 |
+| **pooled** | shapley | 0.1 | 5/inf | 0.91–0.92 | 5.0–6.0 | 352 |
+| **pooled** | shapley | 0.2 | 4 | 0.85–0.86 | 4.0–4.0 | 352 |
 
 ## H5 — leave-one-out vs the intersection of the sufficient family
 
 | cell | agreement | clean n | violations excluded | no set in bound |
 |---|---|--:|--:|--:|
 | 2wiki/natural/mistral | 1.00 | 11 | 57 | 12 |
+| 2wiki/natural/phi | 1.00 | 6 | 75 | 19 |
 | 2wiki/natural/qwen | 1.00 | 12 | 87 | 1 |
 | hotpotqa/natural/mistral | 1.00 | 8 | 39 | 11 |
 | hotpotqa/natural/phi | 1.00 | 12 | 57 | 2 |
-| hotpotqa/natural/qwen | 1.00 | 14 | 58 | 3 |
+| hotpotqa/natural/qwen | 1.00 | 16 | 66 | 1 |
+| hotpotqa/natural/qwenbm25 | 1.00 | 20 | 59 | 1 |
 | musique/natural/mistral | 1.00 | 11 | 55 | 14 |
+| musique/natural/phi | 1.00 | 18 | 79 | 3 |
 | musique/natural/qwen | 1.00 | 14 | 83 | 3 |
 
 ## Designed arm — construction and extraction verdicts
 
 | cell | H3a designed-sufficient | H3b link vs distractor silent | H4 beam vs contextcite (designed target) |
 |---|---|---|---|
-| 2wiki/and/mistral | 0.42 [0.30, 0.55] (n=60) | 0.61 vs 0.51 (fail) | 0.45 vs 0.45, p=1.000 (n=11) |
-| 2wiki/and/qwen | pending (run log) | 0.40 vs 0.27 (fail) | pending |
-| hotpotqa/and/mistral | 0.50 [0.33, 0.67] (n=30) | 0.50 vs 0.52 (fail) | 0.20 vs 0.25, p=0.741 (n=20) |
-| hotpotqa/and/phi | pending (run log) | 0.41 vs 0.42 (fail) | 0.16 vs 0.24, p=0.909 (n=37) |
-| hotpotqa/and/qwen | pending (run log) | 0.26 vs 0.26 (fail) | 0.03 vs 0.05, p=1.000 (n=40) |
-| musique/and/qwen | 0.51 [0.37, 0.66] (n=41) | 0.34 vs 0.30 (fail) | 0.05 vs 0.05, p=1.000 (n=20) |
+| hotpotqa/and/phi | pending (run log) | 0.41 vs 0.42 (fail) | pending |
+| hotpotqa/and/qwen | pending (run log) | 0.26 vs 0.26 (fail) | pending |

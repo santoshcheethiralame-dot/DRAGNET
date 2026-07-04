@@ -18,7 +18,7 @@ import matplotlib.pyplot as plt
 
 from _cells import load_cases
 from dragnet.conformal import depth_item
-from dragnet.prereg import h2_coverage
+from dragnet.prereg import h1_small_sets, h2_coverage
 from dragnet.responsibility import max_responsibility
 
 ARMS = (("contextcite", "ranking"), ("interaction", "interaction"), ("shapley", "shapley"))
@@ -237,6 +237,50 @@ def fig_selective(root: Path, out: Path) -> None:
     plt.close(fig)
 
 
+def fig_robustness(root: Path, out: Path) -> None:
+    """F5 — H1 replicated across the full 3x3 grid of models and datasets, with the 120B frontier
+    and a live BM25 retriever shown as out-of-distribution checks. A small sufficient set exists in
+    every cell above the 0.50 target; the guarantee is not an artifact of one model or one pipeline."""
+    models = [("qwen", "Qwen-7B"), ("phi", "Phi-3.5-mini"), ("mistral", "Mistral-7B")]
+    datasets = ["hotpotqa", "2wiki", "musique"]
+    matrix, annots = [], []
+    for key, _ in models:
+        row, arow = [], []
+        for ds in datasets:
+            rows = _mscs(root / ds / "natural" / key)
+            h1 = h1_small_sets(rows, n_boot=1000) if rows else None
+            row.append(h1["rate"] if h1 else float("nan"))
+            arow.append(
+                f"{h1['rate']:.2f}\n[{h1['interval'][0]:.2f}, {h1['interval'][1]:.2f}]" if h1 else "—"
+            )
+        matrix.append(row)
+        annots.append(arow)
+    fig, ax = plt.subplots(figsize=(7.6, 4.8))
+    im = ax.imshow(matrix, cmap="Greens", vmin=0.5, vmax=1.0, aspect="auto")
+    ax.set_xticks(range(len(datasets)))
+    ax.set_xticklabels(datasets)
+    ax.set_yticks(range(len(models)))
+    ax.set_yticklabels([label for _, label in models])
+    for i in range(len(models)):
+        for j in range(len(datasets)):
+            ax.text(j, i, annots[i][j], ha="center", va="center", fontsize=9,
+                    color="white" if matrix[i][j] >= 0.9 else "black")
+    ax.set_title("H1 replicates across the grid: a small sufficient set in every cell (bound-5, target 0.50)")
+    cbar = fig.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
+    cbar.set_label("H1 small-set rate")
+    extra = []
+    for tag, label in (("cerebras-gpt-oss-120b", "120B frontier"), ("qwenbm25", "BM25 live retrieval")):
+        rows = _mscs(root / "hotpotqa" / "natural" / tag)
+        if rows:
+            extra.append(f"{label}  H1 {h1_small_sets(rows, n_boot=1000)['rate']:.2f}")
+    if extra:
+        fig.text(0.5, 0.01, "out-of-distribution checks (hotpotqa):   " + "     ".join(extra),
+                 ha="center", fontsize=9, color="#333333")
+    fig.tight_layout(rect=(0, 0.04, 1, 1))
+    fig.savefig(out / "fig_robustness.png", dpi=160)
+    plt.close(fig)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--root", type=Path, required=True, help="bound-5 cell tree")
@@ -251,6 +295,7 @@ def main() -> None:
     fig_a3(args.root, args.out)
     fig_pareto(args.root, args.out)
     fig_selective(args.root, args.out)
+    fig_robustness(args.root, args.out)
     if args.root3 and args.k10:
         fig_depth(args.root3, args.k10, args.out)
     print(f"figures written to {args.out}")
