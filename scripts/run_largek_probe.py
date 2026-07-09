@@ -137,6 +137,12 @@ def main() -> None:
     parser.add_argument("--k", type=int, default=30, help="retrieval depth of the built contexts")
     parser.add_argument("--model", default=DEFAULT_MODEL)
     parser.add_argument("--load-in-4bit", action="store_true")
+    parser.add_argument(
+        "--device-map", default=None,
+        help="shard an fp16 model across the visible GPUs (e.g. 'auto' for two T4s); takes "
+             "precedence over --load-in-4bit. Needed at large k, where a 30-passage prefill "
+             "overflows a single 16 GB card in 4-bit.",
+    )
     parser.add_argument("--max-new-tokens", type=int, default=24)
     parser.add_argument("--seed", type=int, default=DEFAULT_SEED)
     parser.add_argument("--limit-cases", type=int, default=120, help="wrong cases to probe (0 = all)")
@@ -147,7 +153,14 @@ def main() -> None:
     set_seed(args.seed)
     from lineup.backends import TransformersModel
 
-    model = TransformersModel(args.model, max_new_tokens=args.max_new_tokens, load_in_4bit=args.load_in_4bit)
+    if args.device_map:
+        # A single 16 GB card in 4-bit OOMs on a 30-passage prefill (weights plus the KV cache
+        # and activations of a ~3-4k-token context), so shard an fp16 model across both GPUs.
+        # The paper's own 4-bit-vs-fp16 check (32 vs 31% no-culprit) makes the precision change
+        # immaterial to the structure this probe measures.
+        model = TransformersModel(args.model, max_new_tokens=args.max_new_tokens, device_map=args.device_map)
+    else:
+        model = TransformersModel(args.model, max_new_tokens=args.max_new_tokens, load_in_4bit=args.load_in_4bit)
     args.cell.mkdir(parents=True, exist_ok=True)
 
     scenarios_path = args.cell / "scenarios.jsonl"
