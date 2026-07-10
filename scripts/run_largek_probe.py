@@ -289,6 +289,7 @@ def main() -> None:
                     tallies[key] += record[key]
             if (index + 1) % 10 == 0:
                 torch.cuda.empty_cache()        # keep fragmentation flat across thousands of subset queries
+            if (index + 1) % 2 == 0:            # frequent progress: large-k cases are slow, don't run blind
                 n = tallies["ok"]
                 minutes = (time.time() - started) / 60
                 rates = (
